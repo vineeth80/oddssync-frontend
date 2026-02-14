@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 const CATEGORIES = ["All", "Politics", "Crypto", "Economics", "Sports", "Culture", "Climate"];
 const KALSHI_FEE = 0.02;
 const POLY_FEE = 0.01;
-const API_BASE = "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 function ArbDetail({ market }) {
   const [capital, setCapital] = useState(1000);
