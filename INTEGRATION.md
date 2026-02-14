@@ -32,5 +32,11 @@ Market fields used by the UI: `id`, `title`, `category`, `kalshi.yes_price`, `ka
 
 ## Running
 
-- **Backend**: From backend repo, `uvicorn main:app --reload` (or `python main.py`). Uses port 8000 and CORS `*`.
+- **Backend**: From backend repo, `uvicorn main:app --reload` (or `python main.py`). Uses port 8000 and CORS from `ALLOWED_ORIGINS` (default `*`).
 - **Frontend**: `VITE_API_URL` in `.env` if API is not at `http://localhost:8000`; then `npm run dev`.
+
+## Railway deployment
+
+- **Frontend** (https://oddssync-frontend-production.up.railway.app/): API URL is resolved in this order: (1) `VITE_API_URL` at build time, (2) if the app is served from that host, fallback to `https://oddssync-backend-production.up.railway.app`, (3) else `http://localhost:8000`. No need to set `VITE_API_URL` on Railway if the app is only ever served from the production frontend host.
+- **Backend** (https://oddssync-backend-production.up.railway.app): Set `ALLOWED_ORIGINS` to include `https://oddssync-frontend-production.up.railway.app` (and optionally local origins for testing). See backend `.env.example`.
+- **"Unexpected token '<'"**: If the frontend gets HTML instead of JSON, it now checks `Content-Type` before parsing and shows a clear error. Ensure the frontend is calling the backend URL, not the frontend or a Railway error page.

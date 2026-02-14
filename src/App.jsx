@@ -3,7 +3,22 @@ import React, { useState, useMemo, useEffect } from "react";
 const CATEGORIES = ["All", "Politics", "Crypto", "Economics", "Sports", "Culture", "Climate"];
 const KALSHI_FEE = 0.02;
 const POLY_FEE = 0.01;
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+// Production Railway domains (must match deployment)
+const PRODUCTION_FRONTEND_HOST = "oddssync-frontend-production.up.railway.app";
+const PRODUCTION_BACKEND_URL = "https://oddssync-backend-production.up.railway.app";
+
+/** Resolve API base URL: env at build time, or production backend when on Railway frontend, else localhost. No trailing slash. */
+function getApiBaseUrl() {
+  const fromEnv = import.meta.env.VITE_API_URL;
+  if (fromEnv && String(fromEnv).trim()) {
+    return String(fromEnv).trim().replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined" && window.location?.hostname === PRODUCTION_FRONTEND_HOST) {
+    return PRODUCTION_BACKEND_URL;
+  }
+  return "http://localhost:8000";
+}
 
 function ArbDetail({ market }) {
   const [capital, setCapital] = useState(1000);
@@ -156,8 +171,10 @@ export default function OddsSyncDashboard() {
   const [expandedId, setExpandedId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch data from backend
+  // Fetch data from backend (guards against backend returning HTML → "Unexpected token '<'").
   const fetchMarkets = async () => {
+    const apiBase = getApiBaseUrl();
+    const url = `${apiBase}/markets`;
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -167,8 +184,21 @@ export default function OddsSyncDashboard() {
       });
       if (arbsOnly) params.append("arbs_only", "true");
       if (searchQuery) params.append("search", searchQuery);
-      
-      const res = await fetch(`${API_BASE_URL}/markets?${params}`);
+
+      const res = await fetch(`${url}?${params}`);
+      const contentType = res.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        const isHtml = text.trim().toLowerCase().startsWith("<!");
+        if (isHtml) {
+          throw new Error(
+            "Backend returned HTML instead of JSON. The API URL may point to the wrong service (e.g. frontend or error page). Check that the backend is running and reachable."
+          );
+        }
+        throw new Error(`API returned unexpected content (${res.status}). Expected JSON.`);
+      }
+
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
       setMarkets(data.markets || []);
@@ -308,7 +338,7 @@ export default function OddsSyncDashboard() {
       {/* Error Banner */}
       {error && (
         <div style={{ padding: "10px 20px", background: "#7f1d1d", color: "#fecaca", fontSize: 12 }}>
-          ⚠️ {error} — Make sure backend is running on {API_BASE_URL}
+          ⚠️ {error} — Backend: <code style={{ fontSize: 11 }}>{getApiBaseUrl()}</code>
         </div>
       )}
 
