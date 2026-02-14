@@ -32,12 +32,12 @@ function ArbDetail({ market }) {
   const annualizedRoi = ((arb.roi_pct / 100) * (365 / daysToClose) * 100).toFixed(1);
 
   const isKalshiYes = arb.strategy === "YES_KALSHI_NO_POLY";
-  const leg1 = isKalshiYes 
-    ? { platform: "Kalshi", side: "YES", price: market.kalshi.yes_price }
-    : { platform: "Polymarket", side: "YES", price: market.poly.yes_price };
+  const leg1 = isKalshiYes
+    ? { platform: "Kalshi", side: "YES", price: market.kalshi?.yes_price ?? 0 }
+    : { platform: "Polymarket", side: "YES", price: market.poly?.yes_price ?? 0 };
   const leg2 = isKalshiYes
-    ? { platform: "Polymarket", side: "NO", price: market.poly.no_price }
-    : { platform: "Kalshi", side: "NO", price: market.kalshi.no_price };
+    ? { platform: "Polymarket", side: "NO", price: market.poly?.no_price ?? 0 }
+    : { platform: "Kalshi", side: "NO", price: market.kalshi?.no_price ?? 0 };
 
   const minDepth = market.liquidity?.min_depth || 0;
 
@@ -168,7 +168,7 @@ export default function OddsSyncDashboard() {
       if (arbsOnly) params.append("arbs_only", "true");
       if (searchQuery) params.append("search", searchQuery);
       
-      const res = await fetch(`${API_BASE}/markets?${params}`);
+      const res = await fetch(`${API_BASE_URL}/markets?${params}`);
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
       setMarkets(data.markets || []);
@@ -308,7 +308,7 @@ export default function OddsSyncDashboard() {
       {/* Error Banner */}
       {error && (
         <div style={{ padding: "10px 20px", background: "#7f1d1d", color: "#fecaca", fontSize: 12 }}>
-          ⚠️ {error} — Make sure backend is running on {API_BASE}
+          ⚠️ {error} — Make sure backend is running on {API_BASE_URL}
         </div>
       )}
 
